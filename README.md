@@ -1,6 +1,8 @@
 # Flowline
 
-**A local transfer operations dashboard with a deterministic ledger and an MCP-powered agent harness.**
+[![Tests](https://github.com/Or04/flowline-transfer-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/Or04/flowline-transfer-agent/actions/workflows/tests.yml)
+
+**An interactive transfer operations workspace with a deterministic ledger and an MCP-powered agent harness.**
 
 Process a batch, inspect every decision, simulate a write failure, and verify that money is conserved. The browser is a thin operator interface; the financial engine remains the source of truth.
 
@@ -21,7 +23,7 @@ python -m transfer_flow.mock
 python -m transfer_flow.agent transfers.json
 ```
 
-The agent uses a scripted LLM by default: no API key or external LLM is required. The official MCP Python SDK must be installed for the subprocess transport. The dashboard itself uses only the Python standard library.
+The agent uses a scripted LLM by default: no API key or external LLM is required. The official MCP Python SDK must be installed for the subprocess transport. The dashboard itself uses only the Python standard library. The checked-in sample XLSX can be regenerated with `python -m tools.generate_sample_xlsx`.
 
 ## Product tour
 
@@ -73,9 +75,9 @@ flowchart TB
 
 ## Testing
 
-`pytest -q` covers row decisions and DB records, duplicate submissions, full rollback, ambiguous HTTP 500 retries, fake-agent success and failure, report tampering, XLSX equivalence, and the live dashboard endpoints. The separate real MCP subprocess integration test requires the `mcp` package and is skipped if it is unavailable. **Do not treat a skipped integration test as a pass.**
+`pytest -q` covers row decisions and DB records, duplicate submissions, full rollback, ambiguous HTTP 500 retries, fake-agent success and failure, report tampering, XLSX equivalence, and the live dashboard endpoints. The real MCP subprocess integration test runs in CI with the SDK installed; an offline environment without that dependency skips it. **A skipped integration test must not be treated as a pass.**
 
-Last local check: **11 passed, 1 skipped, 0 failed**. Live MCP subprocess integration still requires verification in an environment with the official SDK installed.
+Verified on GitHub Actions with the official MCP 1.x SDK: **12 passed, 0 failed, 0 skipped**. The real stdio MCP subprocess is included in this result.
 
 ## Decisions and trade-offs
 
