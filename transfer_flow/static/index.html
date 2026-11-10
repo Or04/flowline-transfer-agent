@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Flowline | Transfer Operations</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#182b3c;background:#f7f9fb;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button{font:inherit;cursor:pointer}button:focus-visible{outline:3px solid #6ea7e3;outline-offset:3px}
+.shell{min-height:100vh;display:grid;grid-template-columns:220px minmax(0,1fr)}
+aside{background:#fff;border-right:1px solid #e6edf2;padding:29px 18px;display:flex;flex-direction:column}
+.brand{font-size:23px;letter-spacing:-1px;font-weight:800;margin:0 0 42px 8px}.brand:before{content:"◈";color:#2777b4;margin-right:8px}.brand span{color:#8e9ba8}
+.nav{padding:12px 14px;border-radius:9px;background:#edf5fb;color:#176599;font-size:14px;font-weight:700}
+.caption{font-size:11px;color:#7d8b99;line-height:1.75;margin-top:auto;padding:10px}
+main{width:min(1250px,100%);padding:42px 50px;margin:0 auto}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:26px}
+.eyebrow{color:#7a8999;text-transform:uppercase;font-size:11px;font-weight:700;letter-spacing:1.5px}
+h1{font-size:32px;letter-spacing:-1.1px;margin:8px 0}h2{font-size:17px;letter-spacing:-.4px;margin:0}
+p{font-size:14px;color:#657589;line-height:1.6;margin:8px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+button{border:1px solid #dce6ed;background:white;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:650;color:#35495b}
+button.primary{background:#267ab5;border-color:#267ab5;color:white}
+button:hover:not(:disabled){filter:brightness(.96)}button:disabled{opacity:.55;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:18px 0}
+.card{background:#fff;border:1px solid #e6ebf0;border-radius:13px;padding:23px;box-shadow:0 4px 16px #182b3c04}
+.label{font-size:12px;color:#728294;font-weight:650}.value{font-weight:750;font-size:29px;letter-spacing:-1px;margin:12px 0 4px;font-variant-numeric:tabular-nums}
+.sub{font-size:12px;color:#81909f}.good{color:#168568}.bad{color:#bd5959}
+.two{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px}
+.heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.pill{display:inline-flex;border-radius:20px;padding:5px 10px;font-size:11px;font-weight:700;background:#eaf5f0;color:#167959}
+.pill.fail{background:#ffefef;color:#ae4c4c}
+.bar{display:flex;overflow:hidden;height:12px;border-radius:20px;background:#e8eef1;margin:22px 0 15px}
+.bar>span{height:100%}.legend{display:flex;gap:14px;flex-wrap:wrap;color:#687887;font-size:12px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.note{font-size:12px;color:#51708b;background:#f1f7fc;padding:12px 14px;border-radius:8px;margin-top:18px;line-height:1.5}
+.account{display:flex;justify-content:space-between;border-bottom:1px solid #edf1f5;padding:12px 0;font-size:13px;gap:10px}
+.account:last-child{border-bottom:0}.account strong{font-variant-numeric:tabular-nums}
+.scroll{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+th{color:#8794a3;font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+td,th{padding:13px 10px;border-bottom:1px solid #edf1f4}td{font-variant-numeric:tabular-nums}
+.status{font-size:11px;font-weight:750}.status.ACCEPTED{color:#178166}.status.REJECTED{color:#bc5957}.status.DUPLICATE{color:#798797}
+.empty{padding:28px 10px;text-align:center;color:#8593a2;font-size:13px}
+.flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:19px 0}.step{border:1px solid #e6edf2;background:#f7fafc;border-radius:8px;flex:1;text-align:center;padding:12px 8px;font-size:12px;font-weight:650;min-width:115px}
+.arrow{color:#98a7b4}.spaced{margin-top:16px}#notice{min-height:20px;margin:16px 0;font-size:13px;color:#546e87}
+@media(max-width:1050px){main{padding:28px}.top{flex-direction:column}.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.shell{display:block}aside{padding:14px 20px}.brand{margin:0;font-size:20px}.nav,.caption{display:none}main{padding:19px}.grid{gap:9px}.card{padding:16px}.value{font-size:23px}.top{margin-bottom:16px}.arrow{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside aria-label="Navigation"><div class="brand">flowline<span>.</span></div><div class="nav" aria-current="page">Overview</div><div class="caption">LOCAL DEMO<br>Deterministic transfer engine<br>SQLite · MCP · Agent harness</div></aside>
+<main>
+<header class="top"><div><div class="eyebrow">Operations / Transfer reconciliation</div><h1>Transfer overview</h1><p>Process a batch, review every decision and verify that money stays balanced.</p></div>
+<div class="actions"><button id="reset" type="button">Reset demo</button><button id="fault" type="button">Simulate rollback</button><button id="run" class="primary" type="button">▶ Process batch</button></div></header>
+<section class="grid" aria-label="Key figures">
+<div class="card"><div class="label">Opening total</div><div id="opening" class="value">—</div><div class="sub">ILS · all accounts</div></div>
+<div class="card"><div class="label">Current total</div><div id="current" class="value">—</div><div class="sub">After reconciliation</div></div>
+<div class="card"><div class="label">Accepted transfers</div><div id="accepted" class="value good">—</div><div class="sub">Committed movements</div></div>
+<div class="card"><div class="label">Money conserved</div><div id="preserved" class="value">—</div><div class="sub">Opening = closing</div></div>
+</section>
+<div class="two">
+<section class="card"><div class="heading"><h2>Batch reconciliation</h2><span id="batchstatus" class="pill">Not started</span></div>
+<p id="batchdesc">Reset the demo and process the sample file to view the results.</p>
+<div id="bar" class="bar"><span style="width:100%;background:#e8eef1"></span></div>
+<div class="legend">
+<span><i class="dot" style="background:#25a47a"></i><span id="aCount">0</span> Accepted</span>
+<span><i class="dot" style="background:#d57a73"></i><span id="rCount">0</span> Rejected</span>
+<span><i class="dot" style="background:#9ba6b5"></i><span id="dCount">0</span> Duplicate</span>
+</div>
+<div class="note">The SQLite ledger is the source of truth. The agent reads outcomes through tools but cannot override transfer decisions.</div></section>
+<section class="card"><div class="heading"><h2>Account balances</h2><span class="sub">ILS</span></div><div id="accounts" class="empty">No accounts loaded</div></section>
+</div>
+<section class="card"><div class="heading"><h2>Transfer decisions</h2><span id="rowcount" class="sub">0 rows</span></div><div class="scroll"><table>
+<thead><tr><th scope="col">Row</th><th scope="col">Reference</th><th scope="col">Decision</th><th scope="col">Reason</th></tr></thead>
+<tbody id="rows"><tr><td colspan="4" class="empty">Run a batch to inspect each transfer</td></tr></tbody></table></div></section>
+<section class="card spaced"><h2>How it works</h2><div class="flow">
+<div class="step">01 · Ingest</div><span class="arrow">→</span>
+<div class="step">02 · Validate</div><span class="arrow">→</span>
+<div class="step">03 · Commit / rollback</div><span class="arrow">→</span>
+<div class="step">04 · Reconcile</div></div>
+<p>Ordered business rules and atomic ledger transactions make the system deterministic, retry-safe and auditable.</p></section>
+<div id="notice" role="status" aria-live="polite"></div>
+</main></div>
+<script>
+function el(id){return document.getElementById(id)}
+function fmt(value){return '₪'+Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function safe(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+async function api(path,method,body){
+ var response=await fetch(path,{method:method||'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+ var data=await response.json();
+ if(!response.ok)throw Error(data.error||'Request failed');
+ return data;
+}
+async function refresh(){
+ var state=await api('/api/state');var summary=state.summary;
+ el('opening').textContent=fmt(summary.openingTotal);
+ el('current').textContent=fmt(summary.currentTotal);
+ el('preserved').textContent=summary.preserved?'YES':'NO';
+ el('preserved').className='value '+(summary.preserved?'good':'bad');
+ el('accounts').className='';
+ el('accounts').innerHTML=state.accounts.map(function(a){return '<div class="account"><span>'+safe(a.id)+'</span><strong>'+fmt(a.balance)+'</strong></div>'}).join('')||'<div class="empty">Reset demo to load accounts</div>';
+ var batch=state.batches[0];var rows=Array.isArray(batch&&batch.results)?batch.results:[];
+ var count=function(status){return rows.filter(function(x){return x.status===status}).length};
+ var a=count('ACCEPTED'),r=count('REJECTED'),d=count('DUPLICATE');
+ el('accepted').textContent=batch?a:'—';
+ el('aCount').textContent=a;el('rCount').textContent=r;el('dCount').textContent=d;
+ el('batchstatus').textContent=batch?batch.status:'Not started';
+ el('batchstatus').className='pill '+(batch&&batch.status==='FAILED'?'fail':'');
+ el('batchdesc').textContent=batch?'Batch '+batch.batchId+' · '+rows.length+' decisions · '+batch.status:'Reset the demo and process the sample file to view the results.';
+ el('bar').innerHTML=rows.length?'<span style="width:'+(a/rows.length*100)+'%;background:#25a47a"></span><span style="width:'+(r/rows.length*100)+'%;background:#d57a73"></span><span style="width:'+(d/rows.length*100)+'%;background:#9ba6b5"></span>':'<span style="width:100%;background:#e8eef1"></span>';
+ el('rowcount').textContent=rows.length+' rows';
+ el('rows').innerHTML=rows.map(function(x){return '<tr><td>'+safe(x.index)+'</td><td>'+safe(x.reference)+'</td><td class="status '+safe(x.status)+'">'+safe(x.status)+'</td><td>'+safe(x.code||'—')+'</td></tr>'}).join('')||'<tr><td colspan="4" class="empty">Run a batch to inspect each transfer</td></tr>';
+}
+async function action(fn){
+ ['reset','fault','run'].forEach(function(id){el(id).disabled=true});
+ el('notice').textContent='Working…';
+ try{await fn();await refresh();el('notice').textContent='Operation completed.'}
+ catch(error){el('notice').textContent='Error: '+error.message}
+ finally{['reset','fault','run'].forEach(function(id){el(id).disabled=false})}
+}
+el('reset').onclick=function(){return action(function(){return api('/api/reset','POST')})};
+el('run').onclick=function(){return action(function(){return api('/api/submit','POST')})};
+el('fault').onclick=function(){return action(async function(){
+ await api('/api/reset','POST');await api('/api/fault','POST',{failOnWrite:2});await api('/api/submit','POST');
+})};
+refresh().catch(function(e){el('notice').textContent='Error: '+e.message});
+</script>
+</body>
+</html>
