@@ -1,91 +1,204 @@
+<div align="center">
+
 # Flowline
+### Transfer operations, made transparent.
+
+**A hands-on workspace for processing financial transfers, understanding every decision, and proving the ledger stays consistent.**
+
+[**Get started**](#get-started) · [**Explore the workflow**](#the-experience) · [**How it works**](#under-the-hood) · [**Tests & requirements**](#engineering-proof)
 
 [![Tests](https://github.com/Or04/flowline-transfer-agent/actions/workflows/tests.yml/badge.svg)](https://github.com/Or04/flowline-transfer-agent/actions/workflows/tests.yml)
+![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-334155)
+![Local demo](https://img.shields.io/badge/Demo-local%20browser-0f766e)
 
-**An interactive transfer operations workspace with a deterministic ledger and an MCP-powered agent harness.**
+</div>
 
-Process a batch, inspect every decision, simulate a write failure, and verify that money is conserved. The browser is a thin operator interface; the financial engine remains the source of truth.
+---
 
-## Run it
+## Meet Flowline
 
-Python 3.11+ required. From the project root:
+A transfer file shouldn't be a black box.
+
+**Flowline turns a batch of transfers into a clear, inspectable workflow.** Operators can process a sample batch, see which payments were accepted or rejected, inspect live account balances, and deliberately trigger a database failure to verify that no partial transfer slips through.
+
+The interface is intentionally simple. **The deterministic financial engine—not the browser or an AI model—makes every money decision.**
+
+| **Operate** | **Understand** | **Trust** |
+| :--- | :--- | :--- |
+| Process or reset the sample batch | See each transfer's outcome and rejection reason | Verify atomic writes, idempotency and money conservation |
+| Explore account balances | Review the reconciliation summary | Test failures without changing financial rules |
+
+## Get started
+
+**Requirements:** Python 3.11+. No cloud account or LLM API key required.
 
 ```bash
+git clone https://github.com/Or04/flowline-transfer-agent.git
+cd flowline-transfer-agent
 python -m pip install -e '.[test]'
 python -m transfer_flow.dashboard
 ```
 
-Open **http://127.0.0.1:8787**. Choose **Reset demo**, then **Process batch**. Use **Simulate rollback** to see an atomic failure and unchanged balances.
+Open **http://127.0.0.1:8787**.
 
-```bash
-pytest -q
-python -m transfer_flow.mock
-python -m transfer_flow.agent transfers.json
-```
+> **First 60 seconds:** Select **Reset demo** → **Process batch** → inspect the decisions and balances → **Reset demo** → **Simulate rollback** → **Process batch** to see an atomic failure. Reset once more to return to a clean demo.
 
-The agent uses a scripted LLM by default: no API key or external LLM is required. The official MCP Python SDK must be installed for the subprocess transport. The dashboard itself uses only the Python standard library. The checked-in sample XLSX can be regenerated with `python -m tools.generate_sample_xlsx`.
+The dashboard runs locally on `127.0.0.1` and uses the real SQLite-backed transfer engine. Its default database is in memory, so data resets when the server restarts.
 
-## Product tour
+## The experience
 
-| Screen area | Purpose |
-| --- | --- |
-| Summary | Opening and closing money, accepted count, conservation check |
-| Reconciliation | Accepted / rejected / duplicate breakdown |
-| Accounts | Live SQLite balances |
-| Decisions | Row-level results and first failing business rule |
-| Controls | Reset, submit (idempotent), inject an atomic write failure |
+### One workspace. Four questions answered.
 
-## Architecture
+| Area | What you learn |
+| :--- | :--- |
+| **Overview** | How many transfers succeeded, failed, or were duplicates? |
+| **Transfer decisions** | What happened to each row—and why? |
+| **Accounts** | What are the current balances after processing? |
+| **Reconciliation** | Does the total money before and after still match? |
+
+### A sample run
+
+The included dataset contains **5 accounts** and **12 transfer rows**.
+
+| Accepted | Rejected | Duplicate | Money conserved |
+| :---: | :---: | :---: | :---: |
+| **4** | **7** | **1** | **Yes** |
+
+**ILS 17,300.00 before → ILS 17,300.00 after.**
+
+Rejected rows carry specific reason codes, including insufficient funds, invalid amount, unknown account, unsupported currency and transfer limit violations. A repeated transfer reference is identified rather than executed again.
+
+### Try the failure scenario
+
+**Simulate rollback** injects a failure during ledger writes. The batch fails, and SQLite rolls back its changes: **no partial balance updates**. This is the core guarantee the demo is designed to make visible.
+
+## Under the hood
 
 ```mermaid
 flowchart TB
-    F[JSON / optional XLSX] --> I[Ingestion · parser interface]
-    I --> S[Business service · ordered validation]
-    S --> L[(SQLite · single-batch transaction)]
-    UI[Local browser dashboard] --> API[Local mock HTTP / dashboard API]
-    API --> S
-    M[Agent harness · scripted LLM] --> T[MCP tools · stdio]
-    T --> C[HTTP client · retries and idempotency]
-    C --> API
-    L --> R[Authoritative results and balances]
-    R --> API
-    R --> V[Schema + evidence validation]
-    M --> V
-    V --> O[Reconciliation report + trace]
+    INPUT["JSON / XLSX transfer file"] --> ING["Ingestion<br/>Parse and normalize"]
+    ING --> RULES["Business service<br/>Validate in order"]
+    RULES --> DB[("SQLite ledger<br/>Atomic batch transaction")]
+    DB --> RESULTS["Decisions + balances<br/>Authoritative state"]
+
+    UI["Browser dashboard"] --> API["Local HTTP API"]
+    API --> RULES
+    RESULTS --> API
+    API --> UI
+
+    AGENT["Scripted agent harness"] --> MCP["MCP tools"]
+    MCP --> CLIENT["HTTP client<br/>Retry + idempotency"]
+    CLIENT --> API
+    RESULTS --> CHECK["Schema + evidence checks"]
+    AGENT --> CHECK
+    CHECK --> REPORT["Reconciliation report + trace"]
 ```
 
-**Boundaries:** Ingestion parses formats, not rules. Business validates in specified order and decides each row. Persistence commits all accepted ledger writes in one SQLite transaction or rolls them all back. The MCP agent invokes tools and reports results, but cannot change financial decisions.
+**The boundaries matter:**
 
-## Requirements covered
+- **Ingestion** reads JSON and XLSX. It does not decide whether a transfer is valid.
+- **Business service** applies ordered validation rules. The first failing rule explains the rejection.
+- **Ledger** persists amounts as integer agorot and commits all accepted writes in a single transaction—or rolls everything back on a write failure.
+- **HTTP + MCP** expose controlled operations to clients and agents.
+- **Agent harness** orchestrates tools and builds a report. It cannot override the ledger's decisions.
 
-| Assignment requirement | Implementation / proof |
-| --- | --- |
-| Remote HTTP mock | `POST /__reset`, `/batches`, `/__faults`; `GET /batches/:id`, `/accounts/:id`, `/ledger/summary` |
-| Ordered validation | Eight rules; first failure determines the rejection code |
-| Atomicity | SQLite transaction, deterministic `failOnWrite`, full rollback |
-| Idempotency | Content-derived key; lost `500` response retried without duplicate batch |
-| Source data | 5 opening accounts, 12 transfers; 4 accepted, 7 rejected, 1 duplicate |
-| Conservation | Opening and current total: **ILS 17,300.00** |
-| MCP | `submit_batch`, `get_batch_status`, `get_ledger_summary` |
-| Write guardrail | MCP file-path allowlist |
-| Agent harness | Scripted planner, tool loop, step budget, errors, trace |
-| Structured output | Exact schema and authoritative-result comparison |
-| Prompt injection | Malicious `memo` in `T-012` cannot override ledger decisions |
-| Bonus | XLSX parser; browser demo |
+### Reliability by design
 
-## Testing
+| Guarantee | How Flowline handles it |
+| :--- | :--- |
+| **Atomicity** | A failed write rolls back the entire batch's ledger changes |
+| **Idempotency** | A content-derived key prevents duplicate processing on retries |
+| **Ambiguous failures** | A lost HTTP `500` response can be retried safely with the same key |
+| **Precision** | Account balances are stored in integer agorot, not floating-point values |
+| **Reconciliation** | Opening and closing money totals are checked |
+| **AI safety** | A malicious instruction in a transfer `memo` is treated as data; final reports are validated against authoritative results |
 
-`pytest -q` covers row decisions and DB records, duplicate submissions, full rollback, ambiguous HTTP 500 retries, fake-agent success and failure, report tampering, XLSX equivalence, and the live dashboard endpoints. The real MCP subprocess integration test runs in CI with the SDK installed; an offline environment without that dependency skips it. **A skipped integration test must not be treated as a pass.**
+## The agent, explained simply
 
-Verified on GitHub Actions with the official MCP 1.x SDK: **12 passed, 0 failed, 0 skipped**. The real stdio MCP subprocess is included in this result.
+Flowline includes an **MCP server** with three tools:
 
-## Decisions and trade-offs
+```text
+submit_batch(filePath)
+       ↓
+get_batch_status(batchId)
+       ↓
+get_ledger_summary()
+       ↓
+Validate report against ledger evidence
+```
 
-- **Integer agorot**, not floating-point arithmetic, for persisted balances.
-- **Synchronous processing behind HTTP 202** keeps the exercise deterministic; production would use a durable queue and worker.
-- **Local-only operator dashboard** has no authentication and is not intended for public deployment. Administrative reset and fault endpoints must be protected or removed in production.
-- **Agent output is untrusted.** Memo text is data, and every report is checked against the ledger's authoritative response.
+The default agent uses a **scripted LLM substitute**, making its tool calls repeatable and testable without external services. It records a trace and validates structured output. This is a real tool-execution harness, **not** a claim that a live generative model is connected.
 
-**With another day:** add authentication and explicit write approval, queue-backed asynchronous processing, operational metrics, real-LLM evals, and browser E2E tests.
+The MCP server also restricts which local files an agent may submit. The supplied sample deliberately contains a prompt-injection attempt in a transfer memo; it cannot change the business decisions.
 
-**Real-LLM eval / CI:** run 3–5 fixed goals against a real model and grade the final structured reports against authoritative ledger data. In CI, always run the scripted tests offline; run real-model evals separately with protected credentials and deterministic acceptance criteria.
+## Engineering proof
+
+The implementation includes a local HTTP mock, the three required processing layers, an SQLite ledger, an MCP server, an agent harness, structured reports, and automated tests.
+
+| What is checked | Evidence |
+| :--- | :--- |
+| Business validation | Transfer decisions and rejection codes |
+| Ledger correctness | SQLite records, conservation, and rollback |
+| Network resilience | Retry and duplicate-submission scenarios |
+| Agent safety | Structured-report validation and tampering tests |
+| Integration | HTTP dashboard endpoints and real MCP subprocess |
+| Bonus | XLSX ingestion and GitHub Actions CI |
+
+**Verified in GitHub Actions: 12 passed, 0 failed, 0 skipped**, including the MCP subprocess test using MCP 1.x.
+
+Run the suite yourself:
+
+```bash
+pytest -q
+```
+
+For the separate mock API and agent flow, run these in different terminals:
+
+```bash
+python -m transfer_flow.mock
+```
+
+```bash
+python -m transfer_flow.agent transfers.json
+```
+
+Example artifacts: [report](example-report.json) · [agent trace](example-trace.json) · [source dataset](transfers.json).
+
+<details>
+<summary><strong>Assignment checklist and API reference</strong></summary>
+
+| Requirement | Implementation |
+| :--- | :--- |
+| HTTP mock | `POST /__reset`, `POST /__faults`, `POST /batches`; `GET /batches/:id`, `GET /accounts/:id`, `GET /ledger/summary` |
+| Ingestion | JSON and optional XLSX parser |
+| Business | Ordered validation; first failure wins |
+| Persistence | SQLite transactional ledger |
+| Atomic failure | Deterministic `failOnWrite` fault injection |
+| Retry and idempotency | Stable key derived from batch content |
+| MCP tools | `submit_batch`, `get_batch_status`, `get_ledger_summary` |
+| Agent harness | Scripted planner, tool loop, step budget, trace, error handling |
+| Report | Schema and authoritative-result verification |
+| Security test | Prompt injection embedded in sample memo |
+| Bonus | Browser UI, XLSX, CI |
+
+</details>
+
+<details>
+<summary><strong>Implementation notes and production boundaries</strong></summary>
+
+- The mock processes batches synchronously despite returning HTTP `202`; a production service would use a durable queue and workers.
+- The dashboard is a **local demonstration**, not a hosted production banking application. It has no authentication. Reset and fault-injection endpoints must not be exposed publicly.
+- Before real financial use: add authentication, authorization, explicit approval for money-moving operations, audit trails, observability, and operational recovery.
+- Real-model evaluations would run separately from deterministic CI, with protected credentials and comparisons against ledger evidence.
+
+</details>
+
+---
+
+<div align="center">
+
+**Flowline makes the invisible parts of transfer processing visible.**
+
+*Process with confidence. Inspect every decision. Trust the ledger.*
+
+</div>
