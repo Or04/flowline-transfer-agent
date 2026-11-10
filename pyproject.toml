@@ -2,7 +2,7 @@
 name = "transfer-flow-agent"
 version = "1.0.0"
 requires-python = ">=3.11"
-dependencies = ["mcp>=1.9,<3", "openpyxl>=3.1,<4"]
+dependencies = ["mcp>=1.9,<2", "openpyxl>=3.1,<4"]
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
 [tool.pytest.ini_options]
