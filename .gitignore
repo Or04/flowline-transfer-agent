@@ -1,0 +1,8 @@
+__pycache__/
+.pytest_cache/
+*.pyc
+*.db
+*.sqlite
+agent-trace.json
+.venv/
+.env
