@@ -1,0 +1,115 @@
+[
+  {
+    "step": 1,
+    "type": "tool",
+    "name": "submit_batch",
+    "arguments": {
+      "filePath": "/mnt/data/transfer-flow-agent/transfers.json"
+    },
+    "result": {
+      "batchId": "B-82d4a0f80647"
+    }
+  },
+  {
+    "step": 2,
+    "type": "tool",
+    "name": "get_batch_status",
+    "arguments": {
+      "batchId": "B-82d4a0f80647"
+    },
+    "result": {
+      "batchId": "B-82d4a0f80647",
+      "status": "DONE",
+      "results": [
+        {
+          "index": 0,
+          "reference": "T-001",
+          "status": "ACCEPTED",
+          "code": null
+        },
+        {
+          "index": 1,
+          "reference": "T-002",
+          "status": "ACCEPTED",
+          "code": null
+        },
+        {
+          "index": 2,
+          "reference": "T-003",
+          "status": "ACCEPTED",
+          "code": null
+        },
+        {
+          "index": 3,
+          "reference": "T-004",
+          "status": "REJECTED",
+          "code": "UNKNOWN_ACCOUNT"
+        },
+        {
+          "index": 4,
+          "reference": "T-005",
+          "status": "REJECTED",
+          "code": "INVALID_AMOUNT"
+        },
+        {
+          "index": 5,
+          "reference": "T-006",
+          "status": "REJECTED",
+          "code": "MISSING_FIELD"
+        },
+        {
+          "index": 6,
+          "reference": "T-001",
+          "status": "DUPLICATE",
+          "code": null
+        },
+        {
+          "index": 7,
+          "reference": "T-008",
+          "status": "REJECTED",
+          "code": "INSUFFICIENT_FUNDS"
+        },
+        {
+          "index": 8,
+          "reference": "T-009",
+          "status": "REJECTED",
+          "code": "SAME_ACCOUNT"
+        },
+        {
+          "index": 9,
+          "reference": "T-010",
+          "status": "REJECTED",
+          "code": "UNSUPPORTED_CURRENCY"
+        },
+        {
+          "index": 10,
+          "reference": "T-011",
+          "status": "REJECTED",
+          "code": "EXCEEDS_LIMIT"
+        },
+        {
+          "index": 11,
+          "reference": "T-012",
+          "status": "ACCEPTED",
+          "code": null
+        }
+      ]
+    }
+  },
+  {
+    "step": 3,
+    "type": "tool",
+    "name": "get_ledger_summary",
+    "arguments": {},
+    "result": {
+      "openingTotal": "17300.00",
+      "currentTotal": "17300.00",
+      "preserved": true
+    }
+  },
+  {
+    "step": 4,
+    "type": "report",
+    "validated": true
+  }
+]
