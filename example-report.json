@@ -1,0 +1,53 @@
+{
+  "batchId": "B-82d4a0f80647",
+  "status": "DONE",
+  "accepted": [
+    "T-001",
+    "T-002",
+    "T-003",
+    "T-012"
+  ],
+  "rejected": [
+    {
+      "index": 3,
+      "reference": "T-004",
+      "reason": "UNKNOWN_ACCOUNT"
+    },
+    {
+      "index": 4,
+      "reference": "T-005",
+      "reason": "INVALID_AMOUNT"
+    },
+    {
+      "index": 5,
+      "reference": "T-006",
+      "reason": "MISSING_FIELD"
+    },
+    {
+      "index": 7,
+      "reference": "T-008",
+      "reason": "INSUFFICIENT_FUNDS"
+    },
+    {
+      "index": 8,
+      "reference": "T-009",
+      "reason": "SAME_ACCOUNT"
+    },
+    {
+      "index": 9,
+      "reference": "T-010",
+      "reason": "UNSUPPORTED_CURRENCY"
+    },
+    {
+      "index": 10,
+      "reference": "T-011",
+      "reason": "EXCEEDS_LIMIT"
+    }
+  ],
+  "duplicates": [
+    "T-001"
+  ],
+  "openingTotal": "17300.00",
+  "currentTotal": "17300.00",
+  "moneyPreserved": true
+}
